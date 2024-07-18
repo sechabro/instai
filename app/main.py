@@ -4,12 +4,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from ai import *
-import crud
-import models
-import schemas
+from . import schemas, crud, models, ai
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine
+from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -52,28 +49,28 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@app.post("/users/{user_id}/items/", response_model=schemas.Post)
+@app.post("/users/{user_id}/posts/", response_model=schemas.Post)
 def create_item_for_user(
     user_id: int, item: schemas.PostCreate, db: Session = Depends(get_db)
 ):
-    return crud.create_user_item(db=db, item=item, user_id=user_id)
+    return crud.create_user_post(db=db, item=item, user_id=user_id)
 
 
-@app.get("/items/", response_model=list[schemas.Post])
+@app.get("/posts/", response_model=list[schemas.Post])
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_posts(db, skip=skip, limit=limit)
     return items
 
 
-'''@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def home_page(request: Request):
     return templates.TemplateResponse(request=request, name="home.html")
-    
+
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
-@app.post("/schedule/add_post")
+'''@app.post("/schedule/add_post")
 async def add_post(post: Post):
     return post'''

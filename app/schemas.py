@@ -1,22 +1,21 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class PostBase(BaseModel):
     name: str
-    file: object
-    caption: str
-    file_metadata: dict
-    date_added: str
-    date_posted: str
 
 
 class PostCreate(PostBase):
-    pass
+    caption: str
+    file_metadata: dict
 
 
 class Post(PostBase):
     id: int
     owner_id: int
+    date_added: str
+    date_posted: str
 
     class Config:
         orm_mode = True
