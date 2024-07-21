@@ -163,4 +163,4 @@ cython_debug/
 
 #Random for now
 *.jpg
-.notes
+notes.txt

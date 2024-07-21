@@ -32,7 +32,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
-    items: list[Post] = []
+    posts: list[Post] = []
 
     class Config:
         orm_mode = True
