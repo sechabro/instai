@@ -130,6 +130,7 @@ ENV/
 env.bak/
 venv.bak/
 
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -164,3 +165,4 @@ cython_debug/
 #Random for now
 *.jpg
 notes.txt
+.vscode/
