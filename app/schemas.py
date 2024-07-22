@@ -36,3 +36,21 @@ class User(UserBase):
 
     class Config:
         orm_mode = True
+
+
+class UserOAuth(BaseModel):
+    email: str | None = None
+    is_active: bool | None = None
+
+
+class UserInDB(UserOAuth):
+    hashed_password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None

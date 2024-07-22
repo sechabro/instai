@@ -8,7 +8,7 @@ from . import schemas, crud, models, ai
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
 from .oauth import *
-
+from .schemas import UserOAuth
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -28,12 +28,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-'''@app.post("/users/", response_model=schemas.User)
+@app.post("/register", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)'''
+    return crud.create_user(db=db, user=user)
 
 
 @app.get("/users", response_model=list[schemas.User])
@@ -75,29 +75,24 @@ async def login_page(request: Request):
 
 #### OAUTH CONFIGURATION ####
 @app.post("/token")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = crud.get_user_by_email(
-        db=SessionLocal, email=form_data.username)
-    user_dict = {
-        "email": user.email,
-        "hashed_password": user.hashed_password
-        # "posts": user.posts   models.Post(**user.posts)
-    }
-    if not user_dict:
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+    user = authenticate_user(
+        db=SessionLocal, username=form_data.username, password=form_data.password)
+    if not user:
         raise HTTPException(
-            status_code=400, detail="Incorrect username or password")
-    user = UserInDB(**user_dict)
-    hashed_password = fake_hash_password(form_data.password)
-    if not hashed_password == user.hashed_password:
-        raise HTTPException(
-            status_code=400, detail="Incorrect username or password")
-
-    return {"access_token": user.email, "token_type": "bearer"}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    access_token_expires = timedelta(minutes=EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires)
+    return Token(access_token=access_token, token_type="bearer")
 
 
 @app.get("/users/me")
 async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[UserOAuth, Depends(get_current_active_user)],
 ):
     return current_user
 
