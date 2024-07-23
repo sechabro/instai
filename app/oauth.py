@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
-
+import os
 import jwt
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -11,7 +11,7 @@ from . import crud
 from .database import SessionLocal
 from .schemas import Token, TokenData, UserOAuth, UserInDB
 
-SECRET_KEY = "bbd60ef71b1e20813daf5cf815585a5d748b4af8321a35305f1f87f36f24c306"
+SECRET_KEY = str(os.getenv('INSTAIKEY', default=None))
 ALGORITHM = "HS256"
 EXPIRE_MINUTES = 30
 
@@ -32,6 +32,7 @@ def get_user(db, username: str):
         db=db, email=username)
     if user:
         user_dict = {
+            "id": user.id,
             "email": user.email,
             "hashed_password": user.hashed_password,
             "is_active": user.is_active

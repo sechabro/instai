@@ -7,18 +7,31 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    caption: str
-    file_metadata: dict
-
-
-class Post(PostBase):
     id: int
     owner_id: int
     date_added: str
     date_posted: str
+    caption: str
+    file_metadata: dict
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class PostGet(PostBase):
+    id: int
+    date_added: str
+    date_posted: str
+    caption: str
+    file_metadata: dict
+
+    class Config:
+        from_attributes: True
+
+
+'''class PostCreate(PostBase):
+    caption: str
+    file_metadata: dict'''
 
 
 class UserBase(BaseModel):
@@ -32,7 +45,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
-    posts: list[Post] = []
+    posts: list[PostCreate] = []
 
     class Config:
         orm_mode = True
@@ -44,6 +57,7 @@ class UserOAuth(BaseModel):
 
 
 class UserInDB(UserOAuth):
+    id: int
     hashed_password: str
 
 

@@ -1,5 +1,5 @@
 from typing import Union, Annotated
-from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,8 +12,6 @@ from .schemas import UserOAuth
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-# Dependency
 
 
 def get_db():
@@ -47,17 +45,10 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+    return db_user'''
 
 
-@app.post("/users/{user_id}/posts/", response_model=schemas.Post)
-def create_item_for_user(
-    user_id: int, item: schemas.PostCreate, db: Session = Depends(get_db)
-):
-    return crud.create_user_post(db=db, item=item, user_id=user_id)'''
-
-
-@app.get("/posts/", response_model=list[schemas.Post])
+@app.get("/posts/", response_model=list[schemas.PostGet])
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_posts(db, skip=skip, limit=limit)
     return items
@@ -69,13 +60,13 @@ async def home_page(request: Request):
 
 
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
 
 #### OAUTH CONFIGURATION ####
 @app.post("/token")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+async def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     user = authenticate_user(
         db=SessionLocal, username=form_data.username, password=form_data.password)
     if not user:
@@ -91,11 +82,20 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> T
 
 
 @app.get("/users/me")
-async def read_users_me(
+async def read_current_user(
     current_user: Annotated[UserOAuth, Depends(get_current_active_user)],
 ):
     return current_user
 
-'''@app.post("/schedule/add_post")
-async def add_post(post: Post):
-    return post'''
+
+@app.post("/users/me/add", response_model=schemas.PostGet)
+async def add_post_for_user(current_user: Annotated[UserOAuth, Depends(read_current_user)], item: schemas.PostBase, db: Session = Depends(get_db)):
+    user = current_user
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You must be logged in to perform this action",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    else:
+        return crud.create_user_post(db=db, item=item, user_id=user.id)
