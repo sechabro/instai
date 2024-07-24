@@ -2,7 +2,6 @@ import requests
 import os
 import base64
 from openai import OpenAI
-import PIL
 
 
 api_key = str(os.getenv('OPENKEY001', default=None))
@@ -13,10 +12,6 @@ client = OpenAI(api_key=api_key, organization=org)
 def encode_image(image=None):
     with open(f"./app/uploads/{image}", 'rb') as file:
         return base64.b64encode(file.read()).decode('utf-8')
-
-
-def file_metadata():
-    pass
 
 
 def get_ig_caption(image=None):

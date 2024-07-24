@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from . import models, schemas, ai
+from . import models, schemas, ai, file_metadata
 
 
 def get_user(db: Session, user_id: int):
@@ -33,8 +33,8 @@ def get_posts(db: Session, skip: int = 0, limit: int = 100):
 def create_user_post(db: Session, item: schemas.PostCreate, user_id: int):
     db_item = models.Post(**item.model_dump(), owner_id=user_id)
     db_item.caption = ai.get_ig_caption(image=db_item.name)
-    # ADD IN PIL LOGIC FOR METADATA ###
-    db_item.file_metadata = {"fake": "image data"}
+    db_item.file_metadata = file_metadata.get_image_metadata(
+        image=db_item.name)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)

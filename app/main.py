@@ -64,7 +64,7 @@ async def login(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
 
-#### OAUTH CONFIGURATION ####
+############ OAUTH REQUIRED ############
 @app.post("/token")
 async def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     user = authenticate_user(
