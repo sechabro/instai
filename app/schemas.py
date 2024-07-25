@@ -29,9 +29,9 @@ class PostGet(PostBase):
         from_attributes: True
 
 
-'''class PostCreate(PostBase):
-    caption: str
-    file_metadata: dict'''
+class FileBase(BaseModel):
+    filename: str
+    size: int
 
 
 class UserBase(BaseModel):

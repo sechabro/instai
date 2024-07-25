@@ -39,3 +39,8 @@ def create_user_post(db: Session, item: schemas.PostCreate, user_id: int):
     db.commit()
     db.refresh(db_item)
     return db_item
+
+
+def upload_user_file(db: Session, item: schemas.FileBase, user_id: int):
+    upload_file = item
+    return upload_file

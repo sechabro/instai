@@ -1,5 +1,5 @@
 from typing import Union, Annotated
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Form
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Form, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -21,6 +21,12 @@ def get_db():
     finally:
         db.close()
 
+
+http_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="You must be logged in to perform this action",
+    headers={"WWW-Authenticate": "Bearer"}
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -92,10 +98,15 @@ async def read_current_user(
 async def add_post_for_user(current_user: Annotated[UserOAuth, Depends(read_current_user)], item: schemas.PostBase, db: Session = Depends(get_db)):
     user = current_user
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="You must be logged in to perform this action",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        raise http_exception
     else:
         return crud.create_user_post(db=db, item=item, user_id=user.id)
+
+
+@app.post("/users/me/uploadfiles", response_model=[])
+async def create_upload_files(files: list[UploadFile], current_user: Annotated[UserOAuth, Depends(read_current_user)]):
+    user = current_user
+    if not user:
+        raise http_exception
+    else:
+        return [{"filename": file.filename, "size": file.size} for file in files]
