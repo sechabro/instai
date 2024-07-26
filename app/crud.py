@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from . import models, schemas, ai, file_metadata
+from fastapi import UploadFile, HTTPException, status, Request
+import shutil
+import os
+import aiofiles
 
 
 def get_user(db: Session, user_id: int):
@@ -39,8 +43,3 @@ def create_user_post(db: Session, item: schemas.PostCreate, user_id: int):
     db.commit()
     db.refresh(db_item)
     return db_item
-
-
-def upload_user_file(db: Session, item: schemas.FileBase, user_id: int):
-    upload_file = item
-    return upload_file

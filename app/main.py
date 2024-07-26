@@ -1,5 +1,5 @@
 from typing import Union, Annotated
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Form, File, UploadFile
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Form, File, UploadFile, Header
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -9,9 +9,14 @@ from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
 from .oauth import *
 from .schemas import UserOAuth
+import requests
+import os
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+ROOT_DIR = os.getcwd()
+UP_DIR = os.path.join(ROOT_DIR, "uploads")
 
 
 def get_db():
@@ -109,4 +114,14 @@ async def create_upload_files(files: list[UploadFile], current_user: Annotated[U
     if not user:
         raise http_exception
     else:
-        return [{"filename": file.filename, "size": file.size} for file in files]
+        for file in files:
+            if not os.path.isdir(f"{UP_DIR}/{str(user.id)}"):
+                up_dir_user = os.path.join(UP_DIR, str(user.id))
+                os.mkdir(up_dir_user)
+            file_path = os.path.join(up_dir_user, file.filename)
+            file_content = await file.read()
+            with open(file_path, "wb") as new_file:
+                new_file.write(file_content)
+                file.close()
+        # return [{"filename": file.filename, "size": file.size} for file in files]
+        return ['hi it\'s a list']
