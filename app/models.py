@@ -10,7 +10,7 @@ class Post(Base):
     __tablename__ = "posts"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=False, index=True)
-    caption = Column(String)
+    caption = Column(String, default="no caption")
     file_metadata = Column(JSON)
     date_posted = Column(String, default="not yet posted")
     date_added = Column(String, default=now.strftime("%Y/%m/%d, %H:%M:%S"))

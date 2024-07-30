@@ -19,14 +19,13 @@ class PostCreate(PostBase):
 
 
 class PostGet(PostBase):
-    id: int
     date_added: str
     date_posted: str
     caption: str
     file_metadata: dict
 
     class Config:
-        from_attributes: True
+        from_attributes = True
 
 
 class FileBase(BaseModel):
@@ -48,7 +47,7 @@ class User(UserBase):
     posts: list[PostCreate] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserOAuth(BaseModel):

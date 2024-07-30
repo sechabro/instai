@@ -34,11 +34,13 @@ def get_posts(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Post).offset(skip).limit(limit).all()
 
 
-def create_user_post(db: Session, item: schemas.PostCreate, user_id: int):
+def create_user_post(db: Session, item: schemas.PostCreate, user_id: int, add_caption: bool):
     db_item = models.Post(**item.model_dump(), owner_id=user_id)
-    db_item.caption = ai.get_ig_caption(image=db_item.name)
     db_item.file_metadata = file_metadata.get_image_metadata(
-        image=db_item.name)
+        image=db_item.name, user_id=user_id)
+    if add_caption:
+        db_item.caption = ai.get_ig_caption(
+            image=db_item.name, user_id=user_id)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)

@@ -9,14 +9,16 @@ from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
 from .oauth import *
 from .schemas import UserOAuth
-import requests
+import aiofiles
 import os
+import json
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 ROOT_DIR = os.getcwd()
 UP_DIR = os.path.join(ROOT_DIR, "uploads")
+IMG_TYPE = ['image/jpeg', 'image/png']
 
 
 def get_db():
@@ -108,20 +110,35 @@ async def add_post_for_user(current_user: Annotated[UserOAuth, Depends(read_curr
         return crud.create_user_post(db=db, item=item, user_id=user.id)
 
 
-@app.post("/users/me/uploadfiles", response_model=[])
-async def create_upload_files(files: list[UploadFile], current_user: Annotated[UserOAuth, Depends(read_current_user)]):
+@app.post("/users/me/uploadfiles", response_model=list[schemas.PostGet])
+async def create_upload_files(files: list[UploadFile], current_user: Annotated[UserOAuth, Depends(read_current_user)], add_caption: bool, db: Session = Depends(get_db)):
     user = current_user
     if not user:
         raise http_exception
     else:
+        results = []
         for file in files:
-            if not os.path.isdir(f"{UP_DIR}/{str(user.id)}"):
+            if file.content_type not in IMG_TYPE:
+                raise HTTPException(
+                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                    detail=f"{file.content_type} file type not permitted. Only PNG and Jpeg formats are permitted"
+                )
+            up_dir_user = f"{UP_DIR}/{str(user.id)}"
+            if not os.path.isdir(up_dir_user):
                 up_dir_user = os.path.join(UP_DIR, str(user.id))
                 os.mkdir(up_dir_user)
             file_path = os.path.join(up_dir_user, file.filename)
-            file_content = await file.read()
-            with open(file_path, "wb") as new_file:
-                new_file.write(file_content)
-                file.close()
-        # return [{"filename": file.filename, "size": file.size} for file in files]
-        return ['hi it\'s a list']
+            try:
+                async with aiofiles.open(file_path, "wb") as new_file:
+                    while file_content := await file.read(1024 * 1024):
+                        await new_file.write(file_content)
+            except Exception as e:
+                return {"message": {e}}
+            finally:
+                await file.close()
+                post = crud.create_user_post(db=db, item=schemas.PostBase(
+                    name=file.filename), user_id=user.id, add_caption=add_caption)
+                result = schemas.PostGet(
+                    name=post.name, date_added=post.date_added, date_posted=post.date_posted, caption=post.caption, file_metadata=post.file_metadata)
+                results.append(result)
+        return results

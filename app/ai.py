@@ -9,13 +9,13 @@ org = str(os.getenv('OPENORG', default=None))
 client = OpenAI(api_key=api_key, organization=org)
 
 
-def encode_image(image=None):
-    with open(f"./app/uploads/{image}", 'rb') as file:
+def encode_image(image=None, user_id=None):
+    with open(f"./uploads/{user_id}/{image}", 'rb') as file:
         return base64.b64encode(file.read()).decode('utf-8')
 
 
-def get_ig_caption(image=None):
-    base64_image = encode_image(image=image)
+def get_ig_caption(image=None, user_id=None):
+    base64_image = encode_image(image=image, user_id=user_id)
 
     response = client.chat.completions.create(
         model="gpt-4o",
