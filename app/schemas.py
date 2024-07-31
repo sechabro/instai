@@ -22,7 +22,7 @@ class PostGet(PostBase):
     date_added: str
     date_posted: str
     caption: str
-    file_metadata: dict
+    file_metadata: dict | None = None
 
     class Config:
         from_attributes = True

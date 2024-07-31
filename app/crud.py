@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import update
 from passlib.context import CryptContext
 from . import models, schemas, ai, file_metadata
 from fastapi import UploadFile, HTTPException, status, Request
@@ -45,3 +46,17 @@ def create_user_post(db: Session, item: schemas.PostCreate, user_id: int, add_ca
     db.commit()
     db.refresh(db_item)
     return db_item
+
+
+def add_post_caption(db: Session, items: list[schemas.PostBase], user_id: int):
+    items_updated = []
+    for item in items:
+        row_to_update = db.query(models.Post).filter(
+            models.Post.name == item.name).first()
+        row_to_update.caption = ai.get_ig_caption(
+            image=item.name, user_id=user_id)
+        db.commit()
+        updated_row = schemas.PostGet(name=row_to_update.name, date_added=row_to_update.date_added,
+                                      date_posted=row_to_update.date_posted, caption=row_to_update.caption)
+        items_updated.append(updated_row)
+    return items_updated
