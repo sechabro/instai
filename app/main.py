@@ -1,5 +1,5 @@
 from typing import Union, Annotated
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Form, File, UploadFile, Header
+from fastapi import FastAPI, Request, Depends, HTTPException, status, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -8,7 +8,7 @@ from . import schemas, crud, models, ai
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
 from .oauth import *
-from .schemas import UserOAuth
+from .schemas import UserOAuth, Token
 import aiofiles
 import os
 import json
@@ -16,9 +16,7 @@ import json
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-ROOT_DIR = os.getcwd()
-UP_DIR = os.path.join(ROOT_DIR, "uploads")
-IMG_TYPE = ['image/jpeg', 'image/png']
+current_user = Annotated[UserOAuth, Depends(get_current_active_user)]
 
 
 def get_db():
@@ -28,6 +26,13 @@ def get_db():
     finally:
         db.close()
 
+
+db: Session = Depends(get_db)
+
+
+ROOT_DIR = os.getcwd()
+UP_DIR = os.path.join(ROOT_DIR, "uploads")
+IMG_TYPE = ['image/jpeg', 'image/png']
 
 http_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -40,7 +45,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.post("/register", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, db=db):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -48,12 +53,13 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/users", response_model=list[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_users(skip: int = 0, limit: int = 100, db=db):
     users = crud.get_users(db, skip=skip, limit=limit)
+    return users
 
 
-@app.get("/posts/", response_model=list[schemas.PostGet])
-def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+@app.get("/posts", response_model=list[schemas.PostGet])
+def read_items(skip: int = 0, limit: int = 100, db=db):
     items = crud.get_posts(db, skip=skip, limit=limit)
     return items
 
@@ -87,13 +93,13 @@ async def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) 
 
 @app.get("/users/me")
 async def read_current_user(
-    current_user: Annotated[UserOAuth, Depends(get_current_active_user)],
+    current_user: current_user,
 ):
     return current_user
 
 
 @app.post("/users/me/upload", response_model=list[schemas.PostGet])
-async def upload_files(files: list[UploadFile], current_user: Annotated[UserOAuth, Depends(read_current_user)], add_caption: bool, db: Session = Depends(get_db)):
+async def upload_files(files: list[UploadFile], current_user: current_user, add_caption: bool, db=db):
     user = current_user
     if not user:
         raise http_exception
@@ -127,7 +133,7 @@ async def upload_files(files: list[UploadFile], current_user: Annotated[UserOAut
 
 
 @app.put("/users/me/caption", response_model=list[schemas.PostGet])
-async def caption_file(files: list[schemas.PostBase], current_user: Annotated[UserOAuth, Depends(read_current_user)], db: Session = Depends(get_db)):
+async def caption_file(files: list[schemas.PostBase], current_user: current_user, db=db):
     user = current_user
     if not user:
         raise http_exception
