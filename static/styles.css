@@ -74,3 +74,41 @@ main>.tagline {
     width: 2.65rem;
     height: 2.65rem;
 }
+
+.nav__close {
+    position: relative;
+    display: inline-flex;
+    font-size: 1.8rem;
+    color: var(--text-color-dark);
+    cursor: pointer;
+    margin-bottom: 3.5rem;
+}
+
+.nav__data {
+    position: relative;
+    margin-bottom: 3rem;
+}
+
+.nav__greeting {
+    display: block;
+    color: var(--text-color-dark);
+    font-size: var(--small-font-size);
+    font-weight: 500;
+    margin-bottom: .25rem;
+}
+
+.nav__list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1.5rem;
+}
+
+.nav__link {
+    color: var(--text-color-dark);
+    display: inline-flex;
+    align-items: center;
+    column-gap: 1rem;
+    font-size: var(--small-font-size);
+    font-weight: 500;
+    transition: .3s;
+}
